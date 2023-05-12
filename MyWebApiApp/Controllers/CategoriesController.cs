@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyWebApiApp.Data;
 using MyWebApiApp.Models;
 using System.Linq;
+using System.Net;
 
 namespace MyWebApiApp.Controllers
 {
@@ -21,10 +23,17 @@ namespace MyWebApiApp.Controllers
 
         public IActionResult GetAll()
         {
-            var listCategories = _context.Categories.ToList();
-            return Ok(listCategories);
-        }
+            try
+            {
+                var listCategories = _context.Categories.ToList();
+                return Ok(listCategories);
 
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
         [HttpGet("{cateID}")]
 
         public IActionResult GetByID(int cateID)
@@ -36,7 +45,7 @@ namespace MyWebApiApp.Controllers
         }
 
         [HttpPost]
-
+        [Authorize]
         public IActionResult AddNewCategory (CategoryModel categoryModel)
         {
             try
@@ -47,7 +56,7 @@ namespace MyWebApiApp.Controllers
                 };
                 _context.Add(category);
                 _context.SaveChanges();
-                return Ok(category);
+                return StatusCode(StatusCodes.Status201Created, category);
             }
             catch
             {
@@ -65,6 +74,21 @@ namespace MyWebApiApp.Controllers
                 cate.Name = categoryModel.Name;
                 _context.SaveChanges();
                 return NoContent(); 
+            }
+            else return NotFound();
+
+        }
+
+        [HttpDelete("{cateID}")]
+
+        public IActionResult DeleteCategoryByID(int cateID)
+        {
+            var cate = _context.Categories.SingleOrDefault(c => c.CategoryID == cateID);
+            if (cate != null) 
+            {
+                _context.Remove(cate);
+                _context.SaveChanges();
+                return StatusCode(StatusCodes.Status200OK);
             }
             else return NotFound();
 
